@@ -1,0 +1,47 @@
+import mongoose, { model, Schema } from "mongoose";
+
+mongoose
+  .connect(
+    "mongodb+srv://Ksz:hXeCc6DckXcIq6cA@cluster0.pzgu0uq.mongodb.net/barinly1"
+  )
+  .then(() => {
+    console.log("Connected mongo");
+  });
+
+const UserSchema = new Schema({
+  username: { type: String, unique: true },
+  password: String,
+});
+
+const ContentSchema = new Schema({
+  title: String,
+  link: String,
+  tags: [{ type: mongoose.Types.ObjectId, ref: "Tag" }],
+  userId: {
+    type: mongoose.Types.ObjectId,
+    ref: "User",
+
+    required: true,
+  },
+  authorId: {
+    type: mongoose.Types.ObjectId,
+    ref: "User",
+
+    required: false,
+  },
+});
+const LinkSchema = new Schema({
+  hash: String,
+  userId: {
+    type: mongoose.Types.ObjectId,
+    ref: "User",
+    require: true,
+    unique: true,
+  },
+});
+
+export const LinkModel = model("Links", LinkSchema);
+
+export const ContenModel = model("Content", ContentSchema);
+
+export const UserModel = model("User", UserSchema);

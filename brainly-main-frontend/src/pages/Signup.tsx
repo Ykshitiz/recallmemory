@@ -1,8 +1,7 @@
 import { useRef } from "react";
 import Button from "../components/Button";
 import { Input } from "../components/Input";
-import axios from "axios";
-import { BACKEND_URL } from "../config";
+import { api } from "../api/client";
 import { useNavigate } from "react-router-dom";
 
 const SignUp = () => {
@@ -13,7 +12,7 @@ const SignUp = () => {
     const username = usernameRef.current?.value;
     const password = passwordRef.current?.value;
 
-    await axios.post(BACKEND_URL + "/api/v1/signup", {
+    await api.post("/api/v1/signup", {
       username,
       password,
     });

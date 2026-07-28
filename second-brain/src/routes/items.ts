@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authMiddleware } from "../middleware/auth";
 import { ITEM_TYPES, ItemModel } from "../models/Item";
+import { queueItemProcessing } from "../services/processItem.service";
 
 const router = Router();
 
@@ -29,9 +30,10 @@ router.post("/", authMiddleware, async (req, res) => {
     title: title.trim(),
     rawContent: content,
     link: link?.trim() || (type !== "note" ? content : undefined),
-    extractedText: type === "note" ? content : "",
     aiProcessed: false,
   });
+
+  queueItemProcessing(String(item._id));
 
   res.status(201).json({ item });
 });

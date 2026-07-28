@@ -17,14 +17,17 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [shareMessage, setShareMessage] = useState("");
 
-  const fetchItems = useCallback(async () => {
+  const fetchItems = useCallback(async (silent = false) => {
     const token = localStorage.getItem("token");
     if (!token) {
       navigate("/signin");
       return;
     }
 
-    setLoading(true);
+    if (!silent) {
+      setLoading(true);
+    }
+
     try {
       const params = filter === "all" ? {} : { type: filter };
       const response = await api.get("/api/v1/items", { params });
@@ -32,13 +35,29 @@ function Dashboard() {
     } catch {
       navigate("/signin");
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, [filter, navigate]);
 
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
+
+  const hasPendingAi = items.some((item) => !item.aiProcessed);
+
+  useEffect(() => {
+    if (!hasPendingAi) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      fetchItems(true);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [hasPendingAi, fetchItems]);
 
   async function shareBrain() {
     try {
@@ -77,6 +96,12 @@ function Dashboard() {
         {shareMessage && (
           <p className="text-sm text-purple-700 mb-4 bg-purple-50 p-3 rounded">
             {shareMessage}
+          </p>
+        )}
+
+        {hasPendingAi && (
+          <p className="text-sm text-amber-700 mb-4 bg-amber-50 p-3 rounded">
+            AI is summarizing your latest saves...
           </p>
         )}
 

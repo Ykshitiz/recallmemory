@@ -7,3 +7,4 @@ if (!jwtSecret) {
 
 export const JWT_SECRET = jwtSecret;
 export const PORT = Number(process.env.PORT) || 3000;
+export const GROQ_API_KEY = process.env.GROQ_API_KEY || "";

@@ -14,7 +14,11 @@ function Dashboard() {
   const [modalOpen, setModalOpen] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
   const [filter, setFilter] = useState<ItemType | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTag, setSelectedTag] = useState("");
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
   const [shareMessage, setShareMessage] = useState("");
 
   const fetchItems = useCallback(async (silent = false) => {
@@ -29,21 +33,33 @@ function Dashboard() {
     }
 
     try {
-      const params = filter === "all" ? {} : { type: filter };
+      const params: Record<string, string> = {};
+      if (filter !== "all") params.type = filter;
+      if (searchQuery.trim()) params.q = searchQuery.trim();
+      if (selectedTag) params.tag = selectedTag;
       const response = await api.get("/api/v1/items", { params });
       setItems(response.data.items);
-    } catch {
-      navigate("/signin");
+      setErrorMessage("");
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        navigate("/signin");
+      } else {
+        setErrorMessage("Could not load your saved content. Please try again.");
+      }
     } finally {
       if (!silent) {
         setLoading(false);
       }
     }
-  }, [filter, navigate]);
+  }, [filter, navigate, searchQuery, selectedTag]);
 
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
+
+  const availableTags = Array.from(
+    new Set(items.flatMap((item) => item.tags || []))
+  ).sort((a, b) => a.localeCompare(b));
 
   const hasPendingAi = items.some((item) => !item.aiProcessed);
 
@@ -78,7 +94,124 @@ function Dashboard() {
           onSaved={fetchItems}
         />
 
-        <div className="flex justify-end gap-4 mb-6">
+        {selectedItem && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="item-details-title"
+            onMouseDown={() => setSelectedItem(null)}
+          >
+            <div
+              className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-lg bg-white p-6 shadow-xl"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm capitalize text-gray-500">{selectedItem.type}</p>
+                  <h2 id="item-details-title" className="text-xl font-semibold text-gray-900">
+                    {selectedItem.title}
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedItem(null)}
+                  className="text-gray-500 hover:text-gray-900"
+                  aria-label="Close item details"
+                >
+                  Close
+                </button>
+              </div>
+
+              {!selectedItem.aiProcessed && (
+                <p className="mt-4 rounded bg-amber-50 p-3 text-sm text-amber-700">
+                  AI processing is still pending. This view will update once processing finishes.
+                </p>
+              )}
+
+              {selectedItem.summary && (
+                <section className="mt-5">
+                  <h3 className="text-sm font-semibold text-gray-900">AI summary</h3>
+                  <p className="mt-2 whitespace-pre-line text-sm leading-6 text-gray-700">
+                    {selectedItem.summary}
+                  </p>
+                </section>
+              )}
+
+              {selectedItem.tags.length > 0 && (
+                <section className="mt-5">
+                  <h3 className="text-sm font-semibold text-gray-900">AI tags</h3>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {selectedItem.tags.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => {
+                          setSelectedTag(tag);
+                          setSelectedItem(null);
+                        }}
+                        className="rounded bg-purple-100 px-2 py-1 text-xs text-purple-700"
+                      >
+                        #{tag}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              <section className="mt-5">
+                <h3 className="text-sm font-semibold text-gray-900">Original saved content</h3>
+                {selectedItem.link && selectedItem.type !== "note" ? (
+                  <a
+                    href={selectedItem.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 block break-all text-sm text-purple-700 underline"
+                  >
+                    {selectedItem.link}
+                  </a>
+                ) : (
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-gray-700">
+                    {selectedItem.rawContent}
+                  </p>
+                )}
+              </section>
+
+              {selectedItem.extractedText && (
+                <section className="mt-5">
+                  <h3 className="text-sm font-semibold text-gray-900">Extracted text used by AI</h3>
+                  <p className="mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap rounded bg-gray-50 p-3 text-sm leading-6 text-gray-700">
+                    {selectedItem.extractedText}
+                  </p>
+                </section>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-wrap justify-between gap-4 mb-6">
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search titles, summaries, and tags..."
+              aria-label="Search saved content"
+              className="w-72 max-w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
+            />
+            {(searchQuery || selectedTag) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedTag("");
+                }}
+                className="text-sm text-purple-700 hover:underline"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+          <div className="flex gap-4">
           <Button
             onClick={() => setModalOpen(true)}
             variant="primary"
@@ -91,7 +224,24 @@ function Dashboard() {
             text="Share Brain"
             startIcon={<ShareIcon />}
           />
+          </div>
         </div>
+
+        {availableTags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mb-5">
+            <span className="text-sm text-gray-600">Filter by tag:</span>
+            {availableTags.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => setSelectedTag(selectedTag === tag ? "" : tag)}
+                className={`text-xs px-2 py-1 rounded ${selectedTag === tag ? "bg-purple-600 text-white" : "bg-purple-100 text-purple-700"}`}
+              >
+                #{tag}
+              </button>
+            ))}
+          </div>
+        )}
 
         {shareMessage && (
           <p className="text-sm text-purple-700 mb-4 bg-purple-50 p-3 rounded">
@@ -105,12 +255,18 @@ function Dashboard() {
           </p>
         )}
 
+        {errorMessage && (
+          <p className="text-sm text-red-700 mb-4 bg-red-50 p-3 rounded">{errorMessage}</p>
+        )}
+
         {loading ? (
           <p className="text-gray-500">Loading your brain...</p>
         ) : items.length === 0 ? (
           <div className="text-center py-16 text-gray-500">
-            <p className="text-lg">Nothing saved yet</p>
-            <p className="text-sm mt-2">Add a link, video, tweet, or note to get started.</p>
+            <p className="text-lg">{searchQuery || selectedTag ? "No matching items" : "Nothing saved yet"}</p>
+            <p className="text-sm mt-2">
+              {searchQuery || selectedTag ? "Try a different search or clear your filters." : "Add a link, video, tweet, or note to get started."}
+            </p>
           </div>
         ) : (
           <div className="flex flex-wrap gap-4">
@@ -123,6 +279,8 @@ function Dashboard() {
                 summary={item.summary}
                 tags={item.tags}
                 aiProcessed={item.aiProcessed}
+                onTagClick={setSelectedTag}
+                onView={() => setSelectedItem(item)}
               />
             ))}
           </div>

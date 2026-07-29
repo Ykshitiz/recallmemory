@@ -8,6 +8,8 @@ interface CardProps {
   summary?: string;
   tags?: string[];
   aiProcessed?: boolean;
+  onTagClick?: (tag: string) => void;
+  onView?: () => void;
 }
 
 function toYoutubeEmbed(url: string) {
@@ -27,6 +29,8 @@ const Card = ({
   summary,
   tags = [],
   aiProcessed,
+  onTagClick,
+  onView,
 }: CardProps) => {
   return (
     <div className="p-4 bg-white rounded-md border-gray-200 max-w-72 border min-h-48 min-w-72">
@@ -65,17 +69,27 @@ const Card = ({
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-2">
           {tags.map((tag) => (
-            <span
+            <button
               key={tag}
+              type="button"
+              onClick={() => onTagClick?.(tag)}
               className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded"
             >
               #{tag}
-            </span>
+            </button>
           ))}
         </div>
       )}
 
       <div className="pt-4">
+        <button
+          type="button"
+          onClick={onView}
+          className="text-sm text-purple-700 font-medium hover:underline"
+        >
+          View details
+        </button>
+
         {itemType === "youtube" && (
           <iframe
             className="w-full aspect-video"

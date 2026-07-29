@@ -2,6 +2,7 @@ import Logo from "../icons/Logo";
 import TwitterIcon from "../icons/TwitterIcon";
 import YoutubeIcon from "../icons/YoutubeIcon";
 import SidebarItem from "./SidebarItem";
+import type { ReactElement } from "react";
 import type { ItemType } from "../types/item";
 
 type Filter = ItemType | "all";
@@ -11,7 +12,7 @@ interface SideBarProps {
   onFilterChange: (filter: Filter) => void;
 }
 
-const filters: { value: Filter; label: string; icon?: React.ReactNode }[] = [
+const filters: { value: Filter; label: string; icon?: ReactElement }[] = [
   { value: "all", label: "All" },
   { value: "youtube", label: "YouTube", icon: <YoutubeIcon /> },
   { value: "twitter", label: "Twitter", icon: <TwitterIcon /> },

@@ -39,7 +39,7 @@ router.post("/", authMiddleware, async (req, res) => {
 });
 
 router.get("/", authMiddleware, async (req, res) => {
-  const { type, q } = req.query;
+  const { type, q, tag } = req.query;
   const filter: Record<string, unknown> = { userId: req.userId };
 
   if (typeof type === "string" && ITEM_TYPES.includes(type as typeof ITEM_TYPES[number])) {
@@ -50,7 +50,18 @@ router.get("/", authMiddleware, async (req, res) => {
     filter.$text = { $search: q.trim() };
   }
 
-  const items = await ItemModel.find(filter).sort({ createdAt: -1 });
+  if (typeof tag === "string" && tag.trim()) {
+    filter.tags = tag.trim().toLowerCase();
+  }
+
+  const query = ItemModel.find(filter);
+  if (filter.$text) {
+    query.select({ score: { $meta: "textScore" } }).sort({ score: { $meta: "textScore" }, createdAt: -1 });
+  } else {
+    query.sort({ createdAt: -1 });
+  }
+
+  const items = await query;
   res.json({ items });
 });
 

@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import "./db";
-import { CLIENT_ORIGIN, IS_GROQ_CONFIGURED, PORT } from "./config";
+import { CLIENT_ORIGIN, IS_GEMINI_CONFIGURED, IS_GROQ_CONFIGURED, PORT } from "./config";
 import authRoutes from "./routes/auth";
 import itemsRoutes from "./routes/items";
 import brainRoutes from "./routes/brain";
@@ -15,6 +15,7 @@ app.get("/", (_req, res) => {
   res.json({
     message: "MindVault API is running",
     ai: { provider: "groq", configured: IS_GROQ_CONFIGURED },
+    embeddings: { provider: "gemini", configured: IS_GEMINI_CONFIGURED },
   });
 });
 

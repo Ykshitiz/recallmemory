@@ -35,7 +35,10 @@ function Dashboard() {
     try {
       const params: Record<string, string> = {};
       if (filter !== "all") params.type = filter;
-      if (searchQuery.trim()) params.q = searchQuery.trim();
+      if (searchQuery.trim()) {
+        params.q = searchQuery.trim();
+        params.semantic = "true";
+      }
       if (selectedTag) params.tag = selectedTag;
       const response = await api.get("/api/v1/items", { params });
       setItems(response.data.items);
@@ -66,7 +69,12 @@ function Dashboard() {
     new Set(items.flatMap((item) => item.tags || []))
   ).sort((a, b) => a.localeCompare(b));
 
-  const hasPendingAi = items.some((item) => !item.aiProcessed);
+  const hasPendingAi = items.some(
+    (item) =>
+      !item.aiProcessed ||
+      item.embeddingStatus === "pending" ||
+      item.embeddingStatus === "processing"
+  );
 
   useEffect(() => {
     if (!hasPendingAi) {
@@ -96,6 +104,20 @@ function Dashboard() {
       await fetchItems(true);
     } catch {
       setErrorMessage("Could not restart AI processing. Please try again.");
+    }
+  }
+
+  async function reprocessEmbeddings() {
+    try {
+      const response = await api.post("/api/v1/items/embeddings/reprocess");
+      setShareMessage(
+        response.data.queued
+          ? `Generating semantic-search embeddings for ${response.data.queued} item(s)...`
+          : "All currently loaded items already have semantic-search embeddings."
+      );
+      await fetchItems(true);
+    } catch {
+      setErrorMessage("Could not start embedding generation. Please try again.");
     }
   }
 
@@ -161,6 +183,18 @@ function Dashboard() {
                 <div className="mt-4 rounded bg-red-50 p-3 text-sm text-red-800">
                   <p>{selectedItem.processingError || "AI processing failed."}</p>
                 </div>
+              )}
+
+              {selectedItem.embeddingStatus === "completed" && (
+                <p className="mt-3 rounded bg-blue-50 p-3 text-sm text-blue-800">
+                  Semantic-search embedding is ready.
+                </p>
+              )}
+
+              {selectedItem.embeddingStatus === "unavailable" && (
+                <p className="mt-3 rounded bg-amber-50 p-3 text-sm text-amber-800">
+                  Semantic-search embedding is unavailable: {selectedItem.embeddingError || "add GEMINI_API_KEY and reprocess embeddings."}
+                </p>
               )}
 
               {(selectedItem.processingStatus === "fallback" || selectedItem.processingStatus === "failed") && (
@@ -268,6 +302,13 @@ function Dashboard() {
             text="Share Brain"
             startIcon={<ShareIcon />}
           />
+          <button
+            type="button"
+            onClick={reprocessEmbeddings}
+            className="rounded border border-purple-600 px-3 py-2 text-sm font-medium text-purple-700 hover:bg-purple-50"
+          >
+            Generate embeddings
+          </button>
           </div>
         </div>
 
@@ -295,7 +336,7 @@ function Dashboard() {
 
         {hasPendingAi && (
           <p className="text-sm text-amber-700 mb-4 bg-amber-50 p-3 rounded">
-            AI is summarizing your latest saves...
+            AI is processing your latest saves and semantic-search embeddings...
           </p>
         )}
 

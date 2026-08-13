@@ -4,6 +4,8 @@ export const ITEM_TYPES = ["note", "link", "youtube", "twitter"] as const;
 export type ItemType = (typeof ITEM_TYPES)[number];
 export const PROCESSING_STATUSES = ["pending", "completed", "fallback", "failed"] as const;
 export type ProcessingStatus = (typeof PROCESSING_STATUSES)[number];
+export const EMBEDDING_STATUSES = ["pending", "processing", "completed", "unavailable", "failed"] as const;
+export type EmbeddingStatus = (typeof EMBEDDING_STATUSES)[number];
 
 const ItemSchema = new Schema(
   {
@@ -25,6 +27,12 @@ const ItemSchema = new Schema(
     summary: { type: String, default: "" },
     tags: { type: [String], default: [] },
     embedding: { type: [Number], default: [] },
+    embeddingModel: { type: String, default: "" },
+    embeddingStatus: {
+      type: String,
+      enum: EMBEDDING_STATUSES,
+    },
+    embeddingError: { type: String, default: "" },
     aiProcessed: { type: Boolean, default: false },
     processingStatus: {
       type: String,
@@ -33,6 +41,7 @@ const ItemSchema = new Schema(
     aiProvider: { type: String, default: "" },
     processingError: { type: String, default: "" },
     processedAt: { type: Date },
+    embeddedAt: { type: Date },
     metadata: { type: Schema.Types.Mixed, default: {} },
   },
   { timestamps: true }

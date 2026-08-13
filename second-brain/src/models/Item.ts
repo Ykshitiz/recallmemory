@@ -2,6 +2,8 @@ import mongoose, { model, Schema } from "mongoose";
 
 export const ITEM_TYPES = ["note", "link", "youtube", "twitter"] as const;
 export type ItemType = (typeof ITEM_TYPES)[number];
+export const PROCESSING_STATUSES = ["pending", "completed", "fallback", "failed"] as const;
+export type ProcessingStatus = (typeof PROCESSING_STATUSES)[number];
 
 const ItemSchema = new Schema(
   {
@@ -24,6 +26,13 @@ const ItemSchema = new Schema(
     tags: { type: [String], default: [] },
     embedding: { type: [Number], default: [] },
     aiProcessed: { type: Boolean, default: false },
+    processingStatus: {
+      type: String,
+      enum: PROCESSING_STATUSES,
+    },
+    aiProvider: { type: String, default: "" },
+    processingError: { type: String, default: "" },
+    processedAt: { type: Date },
     metadata: { type: Schema.Types.Mixed, default: {} },
   },
   { timestamps: true }

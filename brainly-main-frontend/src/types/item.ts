@@ -1,4 +1,5 @@
 export type ItemType = "note" | "link" | "youtube" | "twitter";
+export type ProcessingStatus = "pending" | "completed" | "fallback" | "failed";
 
 export interface Item {
   _id: string;
@@ -11,6 +12,10 @@ export interface Item {
   summary?: string;
   tags: string[];
   aiProcessed: boolean;
+  processingStatus?: ProcessingStatus;
+  aiProvider?: "groq" | "fallback" | "";
+  processingError?: string;
+  processedAt?: string;
   createdAt: string;
   updatedAt: string;
 }

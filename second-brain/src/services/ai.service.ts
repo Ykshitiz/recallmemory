@@ -1,12 +1,14 @@
 import Groq from "groq-sdk";
-import { GROQ_API_KEY } from "../config";
+import { GROQ_API_KEY, IS_GROQ_CONFIGURED } from "../config";
 
-const groq = GROQ_API_KEY ? new Groq({ apiKey: GROQ_API_KEY }) : null;
+const groq = IS_GROQ_CONFIGURED ? new Groq({ apiKey: GROQ_API_KEY }) : null;
 
 export interface AiAnalysis {
   summary: string;
   tags: string[];
   suggestedTitle?: string;
+  provider: "groq" | "fallback";
+  failureReason?: string;
 }
 
 const SYSTEM_PROMPT = `You are a personal knowledge assistant. Analyze saved content and return ONLY valid JSON with this shape:
@@ -27,14 +29,17 @@ function parseAiResponse(content: string): AiAnalysis {
       ? parsed.tags.map((tag) => String(tag).toLowerCase().trim()).filter(Boolean).slice(0, 5)
       : [],
     suggestedTitle: parsed.suggestedTitle?.trim(),
+    provider: "groq",
   };
 }
 
-function fallbackAnalysis(title: string, extractedText: string): AiAnalysis {
+function fallbackAnalysis(title: string, extractedText: string, failureReason?: string): AiAnalysis {
   const preview = extractedText.trim().slice(0, 280);
   return {
     summary: preview ? `• ${preview}${extractedText.length > 280 ? "..." : ""}` : `• ${title}`,
     tags: [],
+    provider: "fallback",
+    failureReason,
   };
 }
 
@@ -44,7 +49,7 @@ export async function analyzeContent(
   extractedText: string
 ): Promise<AiAnalysis> {
   if (!groq) {
-    return fallbackAnalysis(title, extractedText);
+    return fallbackAnalysis(title, extractedText, "A valid GROQ_API_KEY is not configured");
   }
 
   const userPrompt = `Title: ${title}
@@ -65,12 +70,15 @@ ${extractedText.slice(0, 6000)}`;
 
     const content = completion.choices[0]?.message?.content;
     if (!content) {
-      return fallbackAnalysis(title, extractedText);
+      return fallbackAnalysis(title, extractedText, "Groq returned an empty response");
     }
 
     return parseAiResponse(content);
   } catch (error) {
-    console.error("AI analysis failed:", error);
-    return fallbackAnalysis(title, extractedText);
+    console.error("Groq analysis request failed", {
+      name: error instanceof Error ? error.name : "UnknownError",
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+    return fallbackAnalysis(title, extractedText, "Groq request failed");
   }
 }

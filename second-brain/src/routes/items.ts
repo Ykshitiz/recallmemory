@@ -31,6 +31,7 @@ router.post("/", authMiddleware, async (req, res) => {
     rawContent: content,
     link: link?.trim() || (type !== "note" ? content : undefined),
     aiProcessed: false,
+    processingStatus: "pending",
   });
 
   queueItemProcessing(String(item._id));
@@ -63,6 +64,27 @@ router.get("/", authMiddleware, async (req, res) => {
 
   const items = await query;
   res.json({ items });
+});
+
+router.post("/:id/reprocess", authMiddleware, async (req, res) => {
+  const item = await ItemModel.findOneAndUpdate(
+    { _id: req.params.id, userId: req.userId },
+    {
+      aiProcessed: false,
+      processingStatus: "pending",
+      processingError: "",
+      aiProvider: "",
+    },
+    { new: true }
+  );
+
+  if (!item) {
+    res.status(404).json({ message: "Item not found" });
+    return;
+  }
+
+  queueItemProcessing(String(item._id), true);
+  res.json({ item });
 });
 
 router.get("/:id", authMiddleware, async (req, res) => {

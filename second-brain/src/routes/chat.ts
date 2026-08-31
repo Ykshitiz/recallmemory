@@ -16,22 +16,32 @@ router.post("/", authMiddleware, async (req, res) => {
     return;
   }
 
-  const retrieved = await hybridSearchItems(req.userId!, message, {});
-  const sources = retrieved.slice(0, 5).map((item: any) => ({
-    _id: String(item._id),
-    title: item.title,
-    type: item.type,
-    summary: item.summary,
-    rawContent: item.rawContent,
-    extractedText: item.extractedText,
-  }));
-  const result = await answerFromBrain(message, sources);
+  try {
+    const retrieved = await hybridSearchItems(req.userId!, message, {});
+    const sources = retrieved.slice(0, 5).map((item: any) => ({
+      _id: String(item._id),
+      title: item.title,
+      type: item.type,
+      summary: item.summary,
+      rawContent: item.rawContent,
+      extractedText: item.extractedText,
+    }));
+    const result = await answerFromBrain(message, sources);
 
-  res.json({
-    answer: result.answer,
-    provider: result.provider,
-    sources: sources.map(({ _id, title, type }) => ({ _id, title, type })),
-  });
+    res.json({
+      answer: result.answer,
+      provider: result.provider,
+      sources: sources.map(({ _id, title, type }) => ({ _id, title, type })),
+    });
+  } catch (error) {
+    console.error("Ask My Brain retrieval failed", {
+      name: error instanceof Error ? error.name : "UnknownError",
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+    res.status(503).json({
+      message: "Ask My Brain could not retrieve your saved content. Check that MongoDB and Gemini embeddings are available, then try again.",
+    });
+  }
 });
 
 export default router;

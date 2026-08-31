@@ -22,7 +22,7 @@ MindVault is an AI-powered second-brain application for saving notes, links, You
 | Backend | Node.js, Express, TypeScript |
 | Database | MongoDB, Mongoose |
 | Auth | JWT, bcrypt |
-| Summary and chat | Groq (`llama-3.3-70b-versatile`) |
+| Summary and chat | Groq (`openai/gpt-oss-20b`) |
 | Embeddings | Gemini (`gemini-embedding-2`, 768 dimensions) |
 
 ## Project structure
@@ -52,6 +52,7 @@ Copy `second-brain/.env.example` to `second-brain/.env` and provide real values:
 MONGO_URL=your_mongodb_connection_string
 JWT_SECRET=a_long_random_secret
 GROQ_API_KEY=gsk_your_groq_key
+GROQ_MODEL=openai/gpt-oss-20b
 GEMINI_API_KEY=your_gemini_key
 CLIENT_ORIGIN=http://localhost:5173
 PORT=3000

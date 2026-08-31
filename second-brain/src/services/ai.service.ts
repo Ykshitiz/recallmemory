@@ -1,5 +1,5 @@
 import Groq from "groq-sdk";
-import { GROQ_API_KEY, IS_GROQ_CONFIGURED } from "../config";
+import { GROQ_API_KEY, GROQ_MODEL, IS_GROQ_CONFIGURED } from "../config";
 
 const groq = IS_GROQ_CONFIGURED ? new Groq({ apiKey: GROQ_API_KEY }) : null;
 
@@ -59,7 +59,7 @@ ${extractedText.slice(0, 6000)}`;
 
   try {
     const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: GROQ_MODEL,
       temperature: 0.3,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
@@ -114,7 +114,7 @@ export async function answerFromBrain(question: string, sources: ChatSource[]) {
 
   try {
     const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: GROQ_MODEL,
       temperature: 0.2,
       messages: [
         {

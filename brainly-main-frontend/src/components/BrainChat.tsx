@@ -36,10 +36,11 @@ export default function BrainChat({ onViewSource }: BrainChatProps) {
         ...current,
         { role: "assistant", content: response.data.answer, sources: response.data.sources },
       ]);
-    } catch {
+    } catch (error: any) {
+      const apiMessage = error.response?.data?.message;
       setMessages((current) => [
         ...current,
-        { role: "assistant", content: "I couldn't answer right now. Please try again." },
+        { role: "assistant", content: apiMessage || "I couldn't answer right now. Please try again." },
       ]);
     } finally {
       setSending(false);

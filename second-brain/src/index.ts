@@ -5,6 +5,7 @@ import { CLIENT_ORIGIN, IS_GEMINI_CONFIGURED, IS_GROQ_CONFIGURED, PORT } from ".
 import authRoutes from "./routes/auth";
 import itemsRoutes from "./routes/items";
 import brainRoutes from "./routes/brain";
+import chatRoutes from "./routes/chat";
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.get("/", (_req, res) => {
 app.use("/api/v1", authRoutes);
 app.use("/api/v1/items", itemsRoutes);
 app.use("/api/v1/brain", brainRoutes);
+app.use("/api/v1/chat", chatRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

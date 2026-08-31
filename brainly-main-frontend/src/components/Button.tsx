@@ -10,11 +10,11 @@ interface ButtonProps {
 }
 
 const variantClasses = {
-  primary: "bg-purple-600 text-white",
-  secondary: "bg-purple-200 text-purple-600",
+  primary: "bg-violet-600 text-white shadow-sm hover:bg-violet-700",
+  secondary: "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50",
 };
 
-const defaultStyles = "px-4 py-2 rounded-md font-light flex items-center   ";
+const defaultStyles = "px-4 py-2.5 rounded-xl font-medium text-sm flex items-center transition-colors disabled:cursor-not-allowed";
 
 const Button = ({ variant, text, startIcon, onClick , fullWidth,loading }: ButtonProps) => {
   return (

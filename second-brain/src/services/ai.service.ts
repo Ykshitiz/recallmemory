@@ -82,3 +82,59 @@ ${extractedText.slice(0, 6000)}`;
     return fallbackAnalysis(title, extractedText, "Groq request failed");
   }
 }
+
+export interface ChatSource {
+  _id: string;
+  title: string;
+  type: string;
+  summary?: string;
+  rawContent?: string;
+  extractedText?: string;
+}
+
+export async function answerFromBrain(question: string, sources: ChatSource[]) {
+  if (!groq) {
+    return {
+      answer: "Ask My Brain needs a valid GROQ_API_KEY before it can answer questions.",
+      provider: "unavailable" as const,
+    };
+  }
+
+  if (!sources.length) {
+    return {
+      answer: "I couldn't find relevant saved content for that question. Try adding more context or saving related material first.",
+      provider: "none" as const,
+    };
+  }
+
+  const context = sources.map((item, index) => {
+    const content = item.summary || item.extractedText || item.rawContent || "";
+    return `[${index + 1}] ${item.title} (${item.type})\n${content.slice(0, 1800)}`;
+  }).join("\n\n");
+
+  try {
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.2,
+      messages: [
+        {
+          role: "system",
+          content: "You answer questions only from the user's saved MindVault context. If the context does not support an answer, say so plainly. Do not invent facts. Cite relevant sources inline using [1], [2], and so on. Be concise and helpful.",
+        },
+        { role: "user", content: `Saved context:\n${context}\n\nQuestion: ${question}` },
+      ],
+    });
+    const answer = completion.choices[0]?.message?.content?.trim();
+    if (!answer) throw new Error("Groq returned an empty chat response");
+    return { answer, provider: "groq" as const };
+  } catch (error) {
+    console.error("Groq chat request failed", {
+      name: error instanceof Error ? error.name : "UnknownError",
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+    return {
+      answer: "I couldn't generate an answer right now. Please try again.",
+      provider: "failed" as const,
+    };
+  }
+}

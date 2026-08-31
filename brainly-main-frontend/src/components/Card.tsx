@@ -35,13 +35,13 @@ const Card = ({
   onView,
 }: CardProps) => {
   return (
-    <div className="p-4 bg-white rounded-md border-gray-200 max-w-72 border min-h-48 min-w-72">
+    <article className="min-h-52 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex justify-between gap-2">
         <div className="flex items-center text-md min-w-0">
           <div className="text-gray-500 pr-2 shrink-0">
             <ShareIcon />
           </div>
-          <span className="font-medium truncate">{title}</span>
+          <span className="font-semibold text-slate-800 truncate">{title}</span>
         </div>
 
         {itemType !== "note" && (
@@ -49,14 +49,14 @@ const Card = ({
             href={link}
             target="_blank"
             rel="noreferrer"
-            className="text-purple-600 text-sm shrink-0"
+            className="shrink-0 text-sm font-medium text-violet-600 hover:text-violet-800"
           >
             Open
           </a>
         )}
       </div>
 
-      <p className="text-xs text-gray-400 mt-1 capitalize">{itemType}</p>
+      <p className="mt-2 text-xs font-medium uppercase tracking-wide text-slate-400">{itemType}</p>
 
       {(!aiProcessed || processingStatus === "pending") && (
         <p className="text-xs text-amber-600 mt-2">AI processing pending...</p>
@@ -99,7 +99,7 @@ const Card = ({
         <button
           type="button"
           onClick={onView}
-          className="text-sm text-purple-700 font-medium hover:underline"
+          className="text-sm font-semibold text-violet-700 hover:text-violet-900 hover:underline"
         >
           View details
         </button>
@@ -137,7 +137,7 @@ const Card = ({
           <p className="text-sm text-gray-500 break-all line-clamp-3">{link}</p>
         )}
       </div>
-    </div>
+    </article>
   );
 };
 

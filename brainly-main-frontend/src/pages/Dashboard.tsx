@@ -6,6 +6,7 @@ import ShareIcon from "../icons/ShareIcon";
 import Card from "../components/Card";
 import CreatContentModal from "../components/CreatContentModal";
 import SideBar from "../components/Sidebar";
+import BrainChat from "../components/BrainChat";
 import { api } from "../api/client";
 import type { Item, ItemType } from "../types/item";
 
@@ -121,10 +122,25 @@ function Dashboard() {
     }
   }
 
+  async function viewSource(itemId: string) {
+    const item = items.find((savedItem) => savedItem._id === itemId);
+    if (item) {
+      setSelectedItem(item);
+      return;
+    }
+
+    try {
+      const response = await api.get(`/api/v1/items/${itemId}`);
+      setSelectedItem(response.data.item);
+    } catch {
+      setErrorMessage("Could not open the selected source.");
+    }
+  }
+
   return (
     <div>
       <SideBar activeFilter={filter} onFilterChange={setFilter} />
-      <div className="p-4 ml-72 min-h-screen bg-gray-100 border-2">
+      <main className="min-h-screen bg-slate-50 px-4 py-6 lg:ml-72 lg:px-10 lg:py-10">
         <CreatContentModal
           open={modalOpen}
           onClose={() => setModalOpen(false)}
@@ -267,14 +283,27 @@ function Dashboard() {
           </div>
         )}
 
-        <div className="flex flex-wrap justify-between gap-4 mb-6">
+        <header className="mb-8 flex flex-wrap items-end justify-between gap-5">
+          <div>
+            <p className="text-sm font-medium text-violet-600">YOUR KNOWLEDGE LIBRARY</p>
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">Welcome back</h1>
+            <p className="mt-2 text-sm text-slate-500">Search, revisit, and connect what you have saved.</p>
+          </div>
+          <div className="flex gap-3">
+            <Button onClick={() => setModalOpen(true)} variant="primary" text="Add content" startIcon={<PlusIcon />} />
+            <Button onClick={shareBrain} variant="secondary" text="Share" startIcon={<ShareIcon />} />
+          </div>
+        </header>
+
+        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap justify-between gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <input
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search titles, summaries, and tags..."
               aria-label="Search saved content"
-              className="w-72 max-w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
+              className="w-80 max-w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
             />
             {(searchQuery || selectedTag) && (
               <button
@@ -283,44 +312,33 @@ function Dashboard() {
                   setSearchQuery("");
                   setSelectedTag("");
                 }}
-                className="text-sm text-purple-700 hover:underline"
+                className="text-sm font-medium text-violet-700 hover:underline"
               >
                 Clear filters
               </button>
             )}
           </div>
-          <div className="flex gap-4">
-          <Button
-            onClick={() => setModalOpen(true)}
-            variant="primary"
-            text="Add Content"
-            startIcon={<PlusIcon />}
-          />
-          <Button
-            onClick={shareBrain}
-            variant="secondary"
-            text="Share Brain"
-            startIcon={<ShareIcon />}
-          />
+          <div className="flex gap-3">
           <button
             type="button"
             onClick={reprocessEmbeddings}
-            className="rounded border border-purple-600 px-3 py-2 text-sm font-medium text-purple-700 hover:bg-purple-50"
+            className="rounded-xl border border-violet-200 px-3 py-2 text-sm font-medium text-violet-700 hover:bg-violet-50"
           >
             Generate embeddings
           </button>
           </div>
         </div>
+        </div>
 
         {availableTags.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 mb-5">
-            <span className="text-sm text-gray-600">Filter by tag:</span>
+          <div className="mb-6 flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium text-slate-500">Filter by tag:</span>
             {availableTags.map((tag) => (
               <button
                 key={tag}
                 type="button"
                 onClick={() => setSelectedTag(selectedTag === tag ? "" : tag)}
-                className={`text-xs px-2 py-1 rounded ${selectedTag === tag ? "bg-purple-600 text-white" : "bg-purple-100 text-purple-700"}`}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium ${selectedTag === tag ? "bg-violet-600 text-white" : "bg-violet-100 text-violet-700 hover:bg-violet-200"}`}
               >
                 #{tag}
               </button>
@@ -329,19 +347,19 @@ function Dashboard() {
         )}
 
         {shareMessage && (
-          <p className="text-sm text-purple-700 mb-4 bg-purple-50 p-3 rounded">
+          <p className="mb-4 rounded-xl border border-violet-100 bg-violet-50 p-3 text-sm text-violet-700">
             {shareMessage}
           </p>
         )}
 
         {hasPendingAi && (
-          <p className="text-sm text-amber-700 mb-4 bg-amber-50 p-3 rounded">
+          <p className="mb-4 rounded-xl border border-amber-100 bg-amber-50 p-3 text-sm text-amber-700">
             AI is processing your latest saves and semantic-search embeddings...
           </p>
         )}
 
         {errorMessage && (
-          <p className="text-sm text-red-700 mb-4 bg-red-50 p-3 rounded">{errorMessage}</p>
+          <p className="mb-4 rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-700">{errorMessage}</p>
         )}
 
         {loading ? (
@@ -354,7 +372,7 @@ function Dashboard() {
             </p>
           </div>
         ) : (
-          <div className="flex flex-wrap gap-4">
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {items.map((item) => (
               <Card
                 key={item._id}
@@ -371,7 +389,9 @@ function Dashboard() {
             ))}
           </div>
         )}
-      </div>
+
+        <BrainChat onViewSource={viewSource} />
+      </main>
     </div>
   );
 }
